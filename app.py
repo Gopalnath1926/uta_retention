@@ -1,45 +1,33 @@
-import streamlit as st
-import pandas as pd
 import pickle
+import pandas as pd
+import streamlit as st
 from sklearn.preprocessing import LabelEncoder
 
-# Load trained model
+# Load model and expected features
 with open("model_rf.pkl", "rb") as file:
-    model = pickle.load(file)
+    model, feature_names = pickle.load(file)
 
-# Expected feature columns
-expected_features = ['Age', 'Gender', 'College', ...]  # Fill in actual training features in order
+# Assume encoders used during training
+gender_encoder = LabelEncoder().fit(['Female', 'Male'])
+college_encoder = LabelEncoder().fit(['Engineering', 'Business', 'Science'])  # replace with actual
 
-# Dummy encoders (use saved encoders in real app)
-encoders = {
-    'Gender': LabelEncoder().fit(['Female', 'Male']),  # same classes as training
-    'College': LabelEncoder().fit([...])  # same categories
-}
-
-# User input UI
-st.title("UTA Retention Predictor")
+# Streamlit inputs
+st.title("Retention Predictor")
+age = st.slider("Age", 17, 60, 18)
 gender = st.selectbox("Gender", ['Female', 'Male'])
-age = st.number_input("Age", min_value=15, max_value=60, step=1)
-college = st.selectbox("College", [...])  # same values as in training set
+college = st.selectbox("First Term College", ['Engineering', 'Business', 'Science'])  # match training
 
-# Build input DataFrame
+# DataFrame
 input_data = {
     'Age': [age],
-    'Gender': [gender],
-    'College': [college]
+    'Gender': gender_encoder.transform([gender]),
+    'FirstTermEnrolledCollege': college_encoder.transform([college])
 }
-
 input_df = pd.DataFrame(input_data)
 
-# Encode like training
-for col in input_df.columns:
-    if col in encoders:
-        input_df[col] = encoders[col].transform(input_df[col])
+# Reorder columns
+input_df = input_df.reindex(columns=feature_names)
 
-# Reindex to match training feature order
-input_df = input_df.reindex(columns=expected_features)
-
-# Predict
-probability = model.predict_proba(input_df)[0][1]
-st.write(f"Probability of Retention: {probability * 100:.2f}%")
-
+# Prediction
+prob = model.predict_proba(input_df)[0][1]
+st.success(f"Predicted probability of retention: {prob*100:.2f}%")
