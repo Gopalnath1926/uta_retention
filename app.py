@@ -1,30 +1,45 @@
 import streamlit as st
 import pandas as pd
 import pickle
+from sklearn.preprocessing import LabelEncoder
 
-# Load model
+# Load trained model
 with open("model_rf.pkl", "rb") as file:
     model = pickle.load(file)
 
-st.title("UTA Student Retention Predictor")
+# Expected feature columns
+expected_features = ['Age', 'Gender', 'College', ...]  # Fill in actual training features in order
 
-st.write("### Input Student Information")
+# Dummy encoders (use saved encoders in real app)
+encoders = {
+    'Gender': LabelEncoder().fit(['Female', 'Male']),  # same classes as training
+    'College': LabelEncoder().fit([...])  # same categories
+}
 
-# Define input fields (match features used in model)
-gender = st.selectbox("Gender", ["Male", "Female"])
-ethnicity = st.selectbox("Ethnicity", ["White", "Black", "Hispanic", " "])
-college = st.selectbox("First Term Enrolled College", ["Engineering", "Business", "Science", "Education", "Liberal Arts"])
-age = st.slider("Age at Admission", 17, 60, 20)
-gpa = st.slider("High School GPA", 0.0, 4.0, 3.0)
+# User input UI
+st.title("UTA Retention Predictor")
+gender = st.selectbox("Gender", ['Female', 'Male'])
+age = st.number_input("Age", min_value=15, max_value=60, step=1)
+college = st.selectbox("College", [...])  # same values as in training set
 
-# Encode inputs manually for simplicity
-gender_code = 1 if gender == "Male" else 0
-ethnicity_code = {"White": 0, "Black": 1, "Hispanic": 2, " ": 3}[ethnicity]
-college_code = {"Engineering": 0, "Business": 1, "Science": 2, "Education": 3, "Liberal Arts": 4}[college]
+# Build input DataFrame
+input_data = {
+    'Age': [age],
+    'Gender': [gender],
+    'College': [college]
+}
 
-# Predict button
-if st.button("Predict Retention Probability"):
-    input_df = pd.DataFrame([[gender_code, ethnicity_code, college_code, age, gpa]],
-                            columns=["Gender", "Ethnicity", "FirstTermEnrolledCollege", "Age", "HS_GPA"])
-    probability = model.predict_proba(input_df)[0][1]
-    st.success(f"Probability of Retention: {probability * 100:.2f}%")
+input_df = pd.DataFrame(input_data)
+
+# Encode like training
+for col in input_df.columns:
+    if col in encoders:
+        input_df[col] = encoders[col].transform(input_df[col])
+
+# Reindex to match training feature order
+input_df = input_df.reindex(columns=expected_features)
+
+# Predict
+probability = model.predict_proba(input_df)[0][1]
+st.write(f"Probability of Retention: {probability * 100:.2f}%")
+
