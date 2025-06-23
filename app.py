@@ -3,7 +3,7 @@ import pickle
 import pandas as pd
 
 # Load the model
-with open("logistic_model.pkl", "rb") as file:
+with open("model.pkl", "rb") as file:
     model, feature_names, label_encoders = pickle.load(file)
 
 st.title("UTA Retention Probability Prediction (Logistic Regression)")
