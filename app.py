@@ -1,30 +1,26 @@
+# app.py
 import streamlit as st
-import pickle
 import pandas as pd
+import pickle
 
-# Load the model
-with open("model.pkl", "rb") as file:
-    model, feature_names, label_encoders = pickle.load(file)
+# Load trained model and feature names
+with open('logistic_model.pkl', 'rb') as f:
+    model, feature_names = pickle.load(f)
 
-st.title("UTA Retention Probability Prediction (Logistic Regression)")
+st.title("UTA Retention Probability Predictor")
 
-# User input fields
-input_data = {}
+# Collect user input
+inputs = {}
 for feature in feature_names:
-    if feature in label_encoders:
-        options = label_encoders[feature].classes_
-        input_data[feature] = st.selectbox(f"{feature}:", options)
-    else:
-        input_data[feature] = st.number_input(f"{feature}:", step=0.1)
+    user_input = st.number_input(f"Enter {feature}:", value=0.0)
+    inputs[feature] = user_input
 
-# Prediction
+# Convert to DataFrame
+input_df = pd.DataFrame([inputs])
+
+# Predict
 if st.button("Predict Retention Probability"):
-    input_df = pd.DataFrame([input_data])
-
-    # Apply encoding for categorical fields
-    for col, le in label_encoders.items():
-        input_df[col] = le.transform(input_df[col])
-
     probability = model.predict_proba(input_df)[0][1]
-    st.success(f"Predicted probability of being retained: {probability * 100:.2f}%")
+    st.success(f"Predicted probability of retention: {probability*100:.2f}%")
+
 
